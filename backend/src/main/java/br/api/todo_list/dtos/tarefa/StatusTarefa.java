@@ -1,4 +1,4 @@
-package br.api.todo_list.dtos;
+package br.api.todo_list.dtos.tarefa;
 
 import java.util.Objects;
 

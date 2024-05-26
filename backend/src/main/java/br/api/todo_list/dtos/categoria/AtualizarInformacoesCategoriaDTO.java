@@ -1,4 +1,4 @@
-package br.api.todo_list.dtos;
+package br.api.todo_list.dtos.categoria;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -11,12 +11,10 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class CriarTarefaDTO implements Serializable {
+public class AtualizarInformacoesCategoriaDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @NotBlank(message = "Título é obrigatório")
-    private String titulo;
     @NotBlank(message = "Descrição é obrigatório")
     private String descricao;
 }

@@ -1,29 +1,33 @@
 package br.api.todo_list.services;
 
-import br.api.todo_list.dtos.AtualizarInformacoesTarefaDTO;
-import br.api.todo_list.dtos.CriarTarefaDTO;
-import br.api.todo_list.dtos.StatusTarefa;
-import br.api.todo_list.dtos.TarefaDTO;
-import br.api.todo_list.exceptions.AtualizarTarefaException;
-import br.api.todo_list.exceptions.DeletarTarefaException;
-import br.api.todo_list.exceptions.MarcarConclusaoTarefaException;
-import br.api.todo_list.exceptions.TarefaNaoEncontradaException;
+import br.api.todo_list.dtos.CategoriaTarefa;
+import br.api.todo_list.dtos.categoria.CategoriaDTO;
+import br.api.todo_list.dtos.tarefa.AtualizarInformacoesTarefaDTO;
+import br.api.todo_list.dtos.tarefa.CriarTarefaDTO;
+import br.api.todo_list.dtos.tarefa.StatusTarefa;
+import br.api.todo_list.dtos.tarefa.TarefaDTO;
+import br.api.todo_list.exceptions.tarefa.AtualizarTarefaException;
+import br.api.todo_list.exceptions.tarefa.DeletarTarefaException;
+import br.api.todo_list.exceptions.tarefa.MarcarConclusaoTarefaException;
+import br.api.todo_list.exceptions.tarefa.TarefaNaoEncontradaException;
+import br.api.todo_list.models.Categoria;
 import br.api.todo_list.models.Tarefa;
 import br.api.todo_list.repositories.TarefaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TarefaService {
+    private final CategoriaService categoriaService;
     private final TarefaRepository tarefaRepository;
 
-    public TarefaService(TarefaRepository tarefaRepository) {
+    public TarefaService(TarefaRepository tarefaRepository, CategoriaService categoriaService) {
         this.tarefaRepository = tarefaRepository;
+        this.categoriaService = categoriaService;
     }
 
     public List<TarefaDTO> listar () {
@@ -34,6 +38,25 @@ public class TarefaService {
         }
 
         return tarefas.stream().map(TarefaDTO::new).toList();
+    }
+
+    public List<CategoriaTarefa> listarAgrupadasPorCategoria() {
+        List<Tarefa> tarefas = tarefaRepository.findAll();
+
+        if (tarefas.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<CategoriaDTO, List<TarefaDTO>> tarefasPorCategoria = tarefas
+                .stream()
+                .map(TarefaDTO::new)
+                .collect(Collectors.groupingBy(TarefaDTO::getCategoria));
+
+        return tarefasPorCategoria
+                .entrySet()
+                .stream()
+                .map(entry -> new CategoriaTarefa(entry.getKey().getDescricao(), entry.getValue()))
+                .collect(Collectors.toList());
     }
 
     public TarefaDTO recuperar (Integer id) {
@@ -84,6 +107,8 @@ public class TarefaService {
     private Tarefa _obterTarefaParaPersistir (CriarTarefaDTO criarTarefaDTO) {
         Tarefa tarefa = new Tarefa();
 
+        _preencherAtributoCategoria(tarefa, criarTarefaDTO.getIdCategoria());
+
         tarefa.setTitulo(criarTarefaDTO.getTitulo());
         tarefa.setDescricao(criarTarefaDTO.getDescricao());
         tarefa.setConcluida(StatusTarefa.EM_ANDAMENTO.getValor());
@@ -96,6 +121,8 @@ public class TarefaService {
         Optional<Tarefa> tarefa = tarefaRepository.findById(id);
 
         if (tarefa.isPresent()) {
+            _preencherAtributoCategoria(tarefa.get(), atualizarInformacoesTarefaDTO.getIdCategoria());
+
             tarefa.get().setTitulo(atualizarInformacoesTarefaDTO.getTitulo());
             tarefa.get().setDescricao(atualizarInformacoesTarefaDTO.getDescricao());
 
@@ -117,5 +144,15 @@ public class TarefaService {
         }
 
         throw new MarcarConclusaoTarefaException();
+    }
+
+    private void _preencherAtributoCategoria (Tarefa tarefa, Integer idCategoria) {
+        if (Objects.nonNull(idCategoria) && Objects.nonNull(categoriaService.recuperar(idCategoria))) {
+            Categoria categoria = new Categoria();
+
+            categoria.setId(idCategoria);
+
+            tarefa.setCategoria(categoria);
+        }
     }
 }

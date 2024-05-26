@@ -21,6 +21,9 @@ public class Tarefa implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_TAREFA")
     private Integer id;
+    @ManyToOne
+    @JoinColumn(name = "ID_CATEGORIA")
+    private Categoria categoria;
     @Column(name = "TITULO", length = 256, nullable = false)
     private String titulo;
     @Column(name = "DESCRICAO", length = 256, nullable = false)
