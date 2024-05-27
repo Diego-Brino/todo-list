@@ -1,49 +1,54 @@
 import {toast} from "sonner";
 import {useCallback} from "react";
-import {URL_API} from "@/constants";
 
-interface useGetProps {
-    functionToRun?(data?: object): boolean | void;
-
-    onSuccess?(data?: object): boolean | void;
-
+interface useGetProps<T> {
+    url: string;
+    functionToRun?(data?: T): boolean | void;
+    onSuccess?(data?: T): boolean | void;
     onFailure?(data?: object): boolean | void;
-
     setIsLoading?: (value: boolean) => void;
 }
 
-export function useGet() {
-    const getRequest = useCallback((props: useGetProps) => {
-        const {functionToRun, onSuccess, onFailure, setIsLoading} = props;
-
-        console.log('Fetching data from: ' + URL_API);
+export function useGet<T>() {
+    const getRequest = useCallback((props: useGetProps<T>) => {
+        const {url, functionToRun, onSuccess, onFailure, setIsLoading} = props;
 
         setIsLoading && setIsLoading(true);
 
-        toast.promise(fetch(URL_API, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }})
-            .then(response => response.json()), {
-            success: (data) => {
-                setIsLoading && setIsLoading(false);
+        toast.promise(
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(async response => {
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.detalhe || 'Erro ao carregar dados!';
+                    throw new Error(errorMessage);
+                }
+                return await response.json() as Promise<T>;
+            }),
+            {
+                success: (data) => {
+                    setIsLoading && setIsLoading(false);
 
-                functionToRun && functionToRun(data);
+                    functionToRun && functionToRun(data);
 
-                onSuccess && onSuccess(data);
+                    onSuccess && onSuccess(data);
 
-                return 'Dados carregados com sucesso!';
-            },
-            error: () => {
-                setIsLoading && setIsLoading(false);
+                    return 'Dados carregados com sucesso!';
+                },
+                error: (err) => {
+                    setIsLoading && setIsLoading(false);
 
-                onFailure && onFailure();
+                    onFailure && onFailure(err);
 
-                return 'Erro ao carregar dados!';
+                    return 'Erro ao carregar dados!';
+                }
             }
-        });
-    }, [toast]);
+        );
+    }, []);
 
     return getRequest;
 }
