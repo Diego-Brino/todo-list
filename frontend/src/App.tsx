@@ -1,73 +1,160 @@
 import './App.css'
-import ToDoCard from "@/components/custom/to-do-card.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {useCallback, useEffect, useState} from "react";
-import {ToDo} from "@/types/to-do.ts";
 import {ToDoDialog} from "@/components/custom/to-do-dialog.tsx";
 import {useGet} from "@/hooks/use.get.ts";
 import {Toaster} from "sonner";
+import {URL_API} from "@/constants";
+import {ToDoAccordion} from "@/components/custom/to-do-accordion.tsx";
+import {Category} from "@/types/category.ts";
+import {CategoryDialog} from "@/components/custom/category-dialog.tsx";
+import {useAppContext} from "@/contexts/app-context.tsx";
 
 function App() {
 
-    const [isDialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [toDoSelected, setToDoSelected] = useState<ToDo | undefined>(undefined);
-    const [todos, setTodos] = useState<ToDo[]>([]);
+    const [categorias, setCategorias] = useState<Category[] | undefined>([]);
 
-    const fetch = useGet();
+    const {
+        toDoSelected, setToDoSelected,
+        categorySelected, setCategorySelected,
+        isToDoDialogOpen, setToDoDialogOpen,
+        isCategoryDialogOpen, setCategoryDialogOpen
+    } = useAppContext();
 
-    const handleDialogOpen = () => {
-        setDialogOpen(true);
+    const fetch = useGet<Category[]>();
+
+    const handleCategoryDialogOpen = () => {
+        setCategoryDialogOpen(true);
     }
 
-    const handleDialogClose = () => {
-        setToDoSelected(undefined);
+    const handleCategoryDialogClose = () => {
+        setCategorySelected(undefined);
 
-        setDialogOpen(false);
+        setCategoryDialogOpen(false);
     };
 
-    const handleToDoSelected = (toDo: ToDo) => {
-        setToDoSelected(toDo);
+    const handleToDoDialogClose = () => {
+        setToDoSelected(undefined);
 
-        handleDialogOpen();
-    }
+        setToDoDialogOpen(false);
+    };
 
-    const fecthToDo = useCallback(() => {
+    const fetchCategories = useCallback(() => {
         fetch({
-            onSuccess: (data) => {
-                console.log(data);
-
-                setTodos(data);
-            },
-            onFailure: () => {
-                console.log('erro');
-            }
+            url: URL_API,
+            onSuccess: (data) => setCategorias(data),
+            onFailure: (err) => console.log(err)
         });
     }, [fetch]);
 
     useEffect(() => {
-        fecthToDo();
+        fetchCategories();
+
+        const categoriasTemp = [
+            {
+                id: 1,
+                titulo: 'Categoria 1',
+                tarefas: [
+                    {
+                        id: 1,
+                        titulo: 'ToDo 1',
+                        descricao: 'Descrição 1',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 2,
+                        titulo: 'ToDo 2',
+                        descricao: 'Descrição 2',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 3,
+                        titulo: 'ToDo 3',
+                        descricao: 'Descrição 3',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 4,
+                        titulo: 'ToDo 4',
+                        descricao: 'Descrição 4',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                ]
+            },
+            {
+                id: 2,
+                titulo: 'Categoria 2',
+                tarefas: [
+                    {
+                        id: 1,
+                        titulo: 'ToDo 1',
+                        descricao: 'Descrição 1',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 2,
+                        titulo: 'ToDo 2',
+                        descricao: 'Descrição 2',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 3,
+                        titulo: 'ToDo 3',
+                        descricao: 'Descrição 3',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                ]
+            },
+            {
+                id: 3,
+                titulo: 'Categoria 3',
+                tarefas: [
+                    {
+                        id: 1,
+                        titulo: 'ToDo 1',
+                        descricao: 'Descrição 1',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 2,
+                        titulo: 'ToDo 2',
+                        descricao: 'Descrição 2',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                    {
+                        id: 3,
+                        titulo: 'ToDo 3',
+                        descricao: 'Descrição 3',
+                        statusTarefa: 'EM_ANDAMENTO'
+                    },
+                ]
+            },
+        ];
+
+        setCategorias(categoriasTemp);
+
     }, [fetch]);
 
     return (
         <div>
             <Toaster position="bottom-left" richColors closeButton/>
-            <div className='grid grid-cols-3  w-full h-full gap-4'>
-                {todos.length === 0 && <p>Nenhum ToDo cadastrado</p>}
-                {todos.map((t) => (
-                    <ToDoCard key={t.id} toDo={t} fun={() => handleToDoSelected(t)}/>
-                ))}
-            </div>
+            <ToDoAccordion categorias={categorias}/>
             <Button
                 variant={'default'}
-                onClick={handleDialogOpen}
+                onClick={handleCategoryDialogOpen}
                 className='fixed bottom-6 right-6'>
-                Adicionar
+                Adicionar Categoria
             </Button>
+            <CategoryDialog
+                category={categorySelected}
+                isOpen={isCategoryDialogOpen}
+                onClose={handleCategoryDialogClose}
+                fetchCategories={fetchCategories}/>
             <ToDoDialog
                 toDo={toDoSelected}
-                isOpen={isDialogOpen}
-                onClose={handleDialogClose}
-                fetchToDo={fecthToDo}/>
+                isOpen={isToDoDialogOpen}
+                onClose={handleToDoDialogClose}
+                fetchToDo={fetchCategories}/>
         </div>
     );
 }

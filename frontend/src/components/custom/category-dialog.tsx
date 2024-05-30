@@ -1,45 +1,31 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog.tsx";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {ToDo} from "@/types/to-do.ts";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage
-} from "@/components/ui/form.tsx";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {useEffect} from "react";
 import {usePost} from "@/hooks/use-post.ts";
 import {usePatch} from "@/hooks/use-patch.ts";
 import {useDelete} from "@/hooks/use-delete.ts";
+import {Category} from "@/types/category.ts";
 import {URL_API} from "@/constants";
 
 const FormSchema = z.object({
     titulo: z.string().nonempty({message: "Título é obrigatório"}),
-    descricao: z.string().nonempty({message: "Descrição é obrigatória"}),
 });
 
-const rawObject = {titulo: '', descricao: ''}
+const rawObject = {titulo: ''}
 
-interface ToDoDialogProps {
-    toDo?: ToDo;
+interface CategoryDialogProps {
+    category?: Category;
     isOpen: boolean;
     onClose: () => void;
-    fetchToDo: () => void;
+    fetchCategories: () => void;
 }
 
-export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) {
+export function CategoryDialog({category, isOpen, onClose, fetchCategories}: CategoryDialogProps) {
     const post = usePost();
     const patch = usePatch();
     const del = useDelete();
@@ -50,14 +36,14 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
     });
 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
-        if (toDo?.id) {
+        if (category?.id) {
             patch({
-                url: URL_API + '/' + toDo.id,
+                url: URL_API + '/' + category.id,
                 data: data,
                 onSuccess: (data) => {
                     console.log(data);
 
-                    fetchToDo();
+                    fetchCategories();
 
                     onClose();
                 }
@@ -69,7 +55,7 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                 onSuccess: (data) => {
                     console.log(data);
 
-                    fetchToDo();
+                    fetchCategories();
 
                     onClose();
                 }
@@ -80,13 +66,13 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
     };
 
     const onDelete = () => {
-        if (toDo?.id) {
+        if (category?.id) {
             del({
-               url: URL_API + '/' + toDo.id,
+                url: URL_API + '/' + category.id,
                 onSuccess: (data) => {
                     console.log(data);
 
-                    fetchToDo();
+                    fetchCategories();
 
                     onClose();
                 }
@@ -103,18 +89,18 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
     }
 
     useEffect(() => {
-        if (toDo) {
-            form.reset(toDo);
+        if (category) {
+            form.reset(category);
         } else {
             form.reset(rawObject);
         }
-    }, [form, isOpen, toDo]);
+    }, [form, isOpen, category]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onCloseDialog}>
             <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle>{toDo ? "Editar ToDo" : "Criar ToDo"}</DialogTitle>
+                    <DialogTitle>{category ? "Editar Categoria" : "Criar Categoria"}</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onError)}>
@@ -132,22 +118,9 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="descricao"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Descrição</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Descrição" {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
                         </div>
                         <DialogFooter className='mt-4'>
-                            {toDo && (
+                            {category && (
                                 <Button
                                     variant="destructive"
                                     type="button"
@@ -162,7 +135,6 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                                 Cancelar
                             </Button>
                             <Button
-                                disabled={toDo?.statusTarefa === "CONCLUIDA"}
                                 type="submit">
                                 Enviar
                             </Button>

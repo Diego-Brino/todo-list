@@ -7,27 +7,38 @@ import {cn} from "@/lib/utils.ts";
 import {ToDo} from "@/types/to-do.ts";
 import {usePatch} from "@/hooks/use-patch.ts";
 import {URL_API} from "@/constants";
+import {useAppContext} from "@/contexts/app-context.tsx";
 
 
 interface ToDoCardProps {
     toDo: ToDo;
-    fun: (toDo: ToDo) => void ;
 }
 
-export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTarefa: 'EM_ANDAMENTO'}, fun}: ToDoCardProps) {
+export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTarefa: 'EM_ANDAMENTO'}}: ToDoCardProps) {
     const [concluido, setConcluido] = useState<boolean>(toDo.statusTarefa == "CONCLUIDA");
 
-    const patch = usePatch();
+    const patch = usePatch<ToDo|undefined>();
+
+    const {
+        setToDoSelected,
+        setToDoDialogOpen
+    } = useAppContext();
+
+    const handleToDoSelected = (toDo: ToDo) => {
+        setToDoSelected(toDo);
+
+        setToDoDialogOpen(true);
+    }
 
     const handleSwitchStatus = (toDo: ToDo) => {
         patch({
             url: URL_API + '/' + toDo.id + '/marcar-conclusao',
-            id: toDo?.id?.toString(),
             onSuccess: (data) => {
                 setConcluido(true);
 
                 console.log(data);
-            }
+            },
+            onFailure: (err) => console.log(err)
         });
     }
 
@@ -42,7 +53,7 @@ export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTaref
                 <p className={cn('', concluido ? 'line-through' : '')}>{toDo.descricao}</p>
             </CardContent>
             <div className='flex w-full justify-between items-center'>
-                <Button variant='ghost' onClick={fun}>
+                <Button variant='ghost' onClick={() => handleToDoSelected(toDo)}>
                     <Pencil1Icon className="h-4 w-4"/>
                 </Button>
                 <Checkbox
