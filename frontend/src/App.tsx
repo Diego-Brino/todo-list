@@ -35,13 +35,14 @@ function App() {
 
     const handleToDoDialogClose = () => {
         setToDoSelected(undefined);
+        setCategorySelected(undefined);
 
         setToDoDialogOpen(false);
     };
 
     const fetchCategories = useCallback(() => {
         fetch({
-            url: URL_API,
+            url: `${URL_API}/tarefa/agrupas-por-categoria`,
             onSuccess: (data) => setCategorias(data),
             onFailure: (err) => console.log(err)
         });
@@ -49,90 +50,6 @@ function App() {
 
     useEffect(() => {
         fetchCategories();
-
-        const categoriasTemp = [
-            {
-                id: 1,
-                titulo: 'Categoria 1',
-                tarefas: [
-                    {
-                        id: 1,
-                        titulo: 'ToDo 1',
-                        descricao: 'Descrição 1',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 2,
-                        titulo: 'ToDo 2',
-                        descricao: 'Descrição 2',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 3,
-                        titulo: 'ToDo 3',
-                        descricao: 'Descrição 3',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 4,
-                        titulo: 'ToDo 4',
-                        descricao: 'Descrição 4',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                ]
-            },
-            {
-                id: 2,
-                titulo: 'Categoria 2',
-                tarefas: [
-                    {
-                        id: 1,
-                        titulo: 'ToDo 1',
-                        descricao: 'Descrição 1',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 2,
-                        titulo: 'ToDo 2',
-                        descricao: 'Descrição 2',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 3,
-                        titulo: 'ToDo 3',
-                        descricao: 'Descrição 3',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                ]
-            },
-            {
-                id: 3,
-                titulo: 'Categoria 3',
-                tarefas: [
-                    {
-                        id: 1,
-                        titulo: 'ToDo 1',
-                        descricao: 'Descrição 1',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 2,
-                        titulo: 'ToDo 2',
-                        descricao: 'Descrição 2',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                    {
-                        id: 3,
-                        titulo: 'ToDo 3',
-                        descricao: 'Descrição 3',
-                        statusTarefa: 'EM_ANDAMENTO'
-                    },
-                ]
-            },
-        ];
-
-        setCategorias(categoriasTemp);
-
     }, [fetch]);
 
     return (
@@ -152,6 +69,7 @@ function App() {
                 fetchCategories={fetchCategories}/>
             <ToDoDialog
                 toDo={toDoSelected}
+                category={categorySelected}
                 isOpen={isToDoDialogOpen}
                 onClose={handleToDoDialogClose}
                 fetchToDo={fetchCategories}/>

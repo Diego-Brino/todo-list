@@ -24,8 +24,10 @@ import {usePost} from "@/hooks/use-post.ts";
 import {usePatch} from "@/hooks/use-patch.ts";
 import {useDelete} from "@/hooks/use-delete.ts";
 import {URL_API} from "@/constants";
+import {Category} from "@/types/category.ts";
 
 const FormSchema = z.object({
+    idCategoria: z.number(),
     titulo: z.string().nonempty({message: "Título é obrigatório"}),
     descricao: z.string().nonempty({message: "Descrição é obrigatória"}),
 });
@@ -34,12 +36,13 @@ const rawObject = {titulo: '', descricao: ''}
 
 interface ToDoDialogProps {
     toDo?: ToDo;
+    category?: Category;
     isOpen: boolean;
     onClose: () => void;
     fetchToDo: () => void;
 }
 
-export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) {
+export function ToDoDialog({toDo, category, isOpen, onClose, fetchToDo}: ToDoDialogProps) {
     const post = usePost();
     const patch = usePatch();
     const del = useDelete();
@@ -52,7 +55,7 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
         if (toDo?.id) {
             patch({
-                url: URL_API + '/' + toDo.id,
+                url: `${URL_API}/tarefa/${toDo.id}`,
                 data: data,
                 onSuccess: (data) => {
                     console.log(data);
@@ -60,11 +63,14 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                     fetchToDo();
 
                     onClose();
+                },
+                onFailure: (data) => {
+                    console.log(data);
                 }
             });
         } else {
             post({
-                url: URL_API,
+                url: `${URL_API}/tarefa`,
                 data: data,
                 onSuccess: (data) => {
                     console.log(data);
@@ -72,17 +78,18 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                     fetchToDo();
 
                     onClose();
+                },
+                onFailure: (data) => {
+                    console.log(data);
                 }
             });
         }
-
-
     };
 
     const onDelete = () => {
         if (toDo?.id) {
             del({
-               url: URL_API + '/' + toDo.id,
+               url: `${URL_API}/tarefa/${toDo.id}`,
                 onSuccess: (data) => {
                     console.log(data);
 
@@ -108,7 +115,8 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
         } else {
             form.reset(rawObject);
         }
-    }, [form, isOpen, toDo]);
+        form.setValue('idCategoria', category?.id as number);
+    }, [form, isOpen, toDo, category]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onCloseDialog}>
@@ -119,6 +127,20 @@ export function ToDoDialog({toDo, isOpen, onClose, fetchToDo}: ToDoDialogProps) 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onError)}>
                         <div className="flex flex-col pt-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="idCategoria"
+                                render={({field}) => (
+                                    <FormItem
+                                    className="hidden">
+                                        <FormLabel>Título</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Título" {...field} />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
                             <FormField
                                 control={form.control}
                                 name="titulo"

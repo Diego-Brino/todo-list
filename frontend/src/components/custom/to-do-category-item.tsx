@@ -5,6 +5,7 @@ import {Button} from "@/components/ui/button.tsx";
 import {Card} from "@/components/ui/card.tsx";
 import {Pencil1Icon, PlusIcon} from "@radix-ui/react-icons";
 import {useAppContext} from "@/contexts/app-context.tsx";
+import React from "react";
 
 interface ToDoCategoryItemProps {
     categoria: Category
@@ -26,42 +27,67 @@ export default function ToDoCategoryItem({categoria}: ToDoCategoryItemProps) {
         setCategoryDialogOpen(true);
     }
 
+    const handleToDoDialogOpen = () => {
+        setCategorySelected(categoria);
+
+        setToDoDialogOpen(true);
+    }
+
     return (
         <AccordionItem value={categoria.id ? `${categoria.id}` : "item"}>
             <AccordionTrigger
             className='text-xl font-bold'>
                 <div className='flex items-center gap-2'>
-                    <p>{categoria.titulo}</p>
+                    <p>{categoria.descricao}</p>
                     <Button
+                        asChild
                         variant='ghost'
                         onClick={(event) => {
                             event.preventDefault();
+                            event.stopPropagation();
                             handleCategorySelected(categoria);
                         }}>
-                        <Pencil1Icon/>
+                        <span>
+                            <Pencil1Icon/>
+                        </span>
                     </Button>
                 </div>
             </AccordionTrigger>
             <AccordionContent>
-                <div className='grid grid-cols-3  w-full h-full gap-4'>
+                <div
+                    key={categoria.id}
+                    className='grid grid-cols-3 w-full h-full gap-4'>
                     {tarefas.length === 0
-                        ? <p>Nenhuma categoria cadastrada</p>
+                        ? <Card
+                            key={`button-${categoria.id}`}
+                            className='flex flex-col items-center justify-center min-w-min min-h-36 p-4'>
+                            <div>
+                                <Button
+                                    key={`button-${categoria.id}`}
+                                    onClick={handleToDoDialogOpen}>
+                                    <PlusIcon />
+                                </Button>
+                            </div>
+                        </Card>
                         : tarefas.map((tarefa, index) => (
-                            <>
-                                <ToDoCard toDo={tarefa} />
+                            <React.Fragment key={tarefa.id}>
+                                <ToDoCard
+                                    key={`${categoria.descricao}-${tarefa.id}`}
+                                    toDo={tarefa}
+                                    category={categoria}/>
                                 {index === tarefas.length - 1 && (
                                     <Card
                                         key={index}
-                                        className='flex flex-col items-center justify-center min-w-min p-4'>
+                                        className='flex flex-col items-center justify-center min-w-min min-h-36 p-4'>
                                         <div>
                                             <Button
-                                            onClick={() => setToDoDialogOpen(true)}>
+                                            onClick={handleToDoDialogOpen}>
                                                 <PlusIcon />
                                             </Button>
                                         </div>
                                     </Card>
                                 )}
-                            </>
+                            </React.Fragment>
                         ))
                     }
                 </div>

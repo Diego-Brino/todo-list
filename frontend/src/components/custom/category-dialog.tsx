@@ -7,16 +7,16 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 import {Input} from "@/components/ui/input.tsx";
 import {useEffect} from "react";
 import {usePost} from "@/hooks/use-post.ts";
-import {usePatch} from "@/hooks/use-patch.ts";
 import {useDelete} from "@/hooks/use-delete.ts";
 import {Category} from "@/types/category.ts";
 import {URL_API} from "@/constants";
+import {usePut} from "@/hooks/use-put.ts";
 
 const FormSchema = z.object({
-    titulo: z.string().nonempty({message: "Título é obrigatório"}),
+    descricao: z.string().nonempty({message: "Descrição é obrigatória"}),
 });
 
-const rawObject = {titulo: ''}
+const rawObject = {descricao: ''}
 
 interface CategoryDialogProps {
     category?: Category;
@@ -27,7 +27,7 @@ interface CategoryDialogProps {
 
 export function CategoryDialog({category, isOpen, onClose, fetchCategories}: CategoryDialogProps) {
     const post = usePost();
-    const patch = usePatch();
+    const put = usePut();
     const del = useDelete();
 
     const form = useForm<z.infer<typeof FormSchema>>({
@@ -37,8 +37,8 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
         if (category?.id) {
-            patch({
-                url: URL_API + '/' + category.id,
+            put({
+                url: `${URL_API}/categoria/${category.id}`,
                 data: data,
                 onSuccess: (data) => {
                     console.log(data);
@@ -50,7 +50,7 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
             });
         } else {
             post({
-                url: URL_API,
+                url: `${URL_API}/categoria`,
                 data: data,
                 onSuccess: (data) => {
                     console.log(data);
@@ -68,7 +68,7 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
     const onDelete = () => {
         if (category?.id) {
             del({
-                url: URL_API + '/' + category.id,
+                url: `${URL_API}/categoria/${category.id}`,
                 onSuccess: (data) => {
                     console.log(data);
 
@@ -80,7 +80,7 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
         }
     }
 
-    const onError = (errors: any) => {
+    const onError = (errors: object) => {
         console.log("Form submission errors:", errors);
     };
 
@@ -107,12 +107,12 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
                         <div className="flex flex-col pt-2 gap-4">
                             <FormField
                                 control={form.control}
-                                name="titulo"
+                                name="descricao"
                                 render={({field}) => (
                                     <FormItem>
-                                        <FormLabel>Título</FormLabel>
+                                        <FormLabel>Descrição</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Título" {...field} />
+                                            <Input placeholder="Descrição" {...field} />
                                         </FormControl>
                                         <FormMessage/>
                                     </FormItem>

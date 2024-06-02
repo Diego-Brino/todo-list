@@ -8,31 +8,35 @@ import {ToDo} from "@/types/to-do.ts";
 import {usePatch} from "@/hooks/use-patch.ts";
 import {URL_API} from "@/constants";
 import {useAppContext} from "@/contexts/app-context.tsx";
+import {Category} from "@/types/category.ts";
 
 
 interface ToDoCardProps {
     toDo: ToDo;
+    category: Category;
 }
 
-export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTarefa: 'EM_ANDAMENTO'}}: ToDoCardProps) {
+export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTarefa: 'EM_ANDAMENTO'}, category}: ToDoCardProps) {
     const [concluido, setConcluido] = useState<boolean>(toDo.statusTarefa == "CONCLUIDA");
 
     const patch = usePatch<ToDo|undefined>();
 
     const {
         setToDoSelected,
+        setCategorySelected,
         setToDoDialogOpen
     } = useAppContext();
 
-    const handleToDoSelected = (toDo: ToDo) => {
+    const handleToDoSelected = (toDo: ToDo, category: Category) => {
         setToDoSelected(toDo);
+        setCategorySelected(category);
 
         setToDoDialogOpen(true);
     }
 
     const handleSwitchStatus = (toDo: ToDo) => {
         patch({
-            url: URL_API + '/' + toDo.id + '/marcar-conclusao',
+            url: URL_API + '/tarefa/' + toDo.id + '/marcar-conclusao',
             onSuccess: (data) => {
                 setConcluido(true);
 
@@ -45,7 +49,7 @@ export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTaref
     return (
         <Card
             key={toDo.id}
-            className='flex flex-col items-start min-w-min p-4'>
+            className='flex flex-col items-start min-w-min min-h-36 p-4'>
             <CardTitle className='flex w-full'>
                 <p>{toDo.titulo}</p>
             </CardTitle>
@@ -53,7 +57,7 @@ export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTaref
                 <p className={cn('', concluido ? 'line-through' : '')}>{toDo.descricao}</p>
             </CardContent>
             <div className='flex w-full justify-between items-center'>
-                <Button variant='ghost' onClick={() => handleToDoSelected(toDo)}>
+                <Button variant='ghost' onClick={() => handleToDoSelected(toDo, category)}>
                     <Pencil1Icon className="h-4 w-4"/>
                 </Button>
                 <Checkbox
