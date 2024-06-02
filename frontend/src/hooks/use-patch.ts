@@ -28,8 +28,21 @@ export function usePatch<T>() {
                 const errorMessage = errorData.detalhe || 'Erro ao alterar dados!';
                 throw new Error(errorMessage);
             }
-            return await response.json() as Promise<T>;
+
+            const responseText = await response.text();
+            let jsonData: T | undefined = undefined;
+
+            if(responseText) {
+                try {
+                    jsonData = JSON.parse(responseText) as T;
+                } catch {
+                    throw new Error('Erro ao converter dados!');
+                }
+            }
+
+            return jsonData;
         }), {
+            loading: 'Carregando...',
             success: (data) => {
                 setIsLoading && setIsLoading(false);
 
@@ -39,12 +52,12 @@ export function usePatch<T>() {
 
                 return 'Dados alterados com sucesso!';
             },
-            error: () => {
+            error: (err) => {
                 setIsLoading && setIsLoading(false);
 
                 onFailure && onFailure();
 
-                return 'Erro ao alterar dados!';
+                return err.message || 'Erro ao alterar dados!';
             }
         });
     }, [toast]);

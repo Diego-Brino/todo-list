@@ -1,6 +1,5 @@
 import {useCallback} from "react";
 import {toast} from "sonner";
-import {URL_API} from "@/constants";
 
 interface usePostProps<T> {
     url: string;
@@ -14,13 +13,13 @@ interface usePostProps<T> {
 export function usePost<T>() {
 
     const postRequest = useCallback((props: usePostProps<T>) => {
-        const {data, functionToRun, onSuccess, onFailure, setIsLoading} = props;
+        const {url, data, functionToRun, onSuccess, onFailure, setIsLoading} = props;
 
-        console.log('Updating data at: ' + URL_API);
+        console.log('Creating data at: ' + url);
 
         setIsLoading && setIsLoading(true);
 
-        toast.promise(fetch(URL_API, {
+        toast.promise(fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -32,7 +31,19 @@ export function usePost<T>() {
                 const errorMessage = errorData.detalhe || 'Erro ao alterar dados!';
                 throw new Error(errorMessage);
             }
-            return await response.json() as Promise<T>;
+
+            const responseText = await response.text();
+            let jsonData: T | undefined = undefined;
+
+            if(responseText) {
+                try {
+                    jsonData = JSON.parse(responseText) as T;
+                } catch {
+                    throw new Error('Erro ao converter dados!');
+                }
+            }
+
+            return jsonData;
         }), {
             loading: 'Carregando...',
             success: (data) => {
@@ -44,12 +55,12 @@ export function usePost<T>() {
 
                 return 'Dados cadastrados com sucesso!';
             },
-            error: () => {
+            error: (err) => {
                 setIsLoading && setIsLoading(false);
 
                 onFailure && onFailure();
 
-                return 'Erro ao alterar dados!';
+                return err.message || 'Erro ao criar dados!';
             }
         });
     }, [toast]);

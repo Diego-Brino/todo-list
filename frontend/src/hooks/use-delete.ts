@@ -1,6 +1,5 @@
 import {useCallback} from "react";
 import {toast} from "sonner";
-import {URL_API} from "@/constants";
 
 interface useDeleteProps<T> {
     url: string;
@@ -14,7 +13,7 @@ export function useDelete<T>() {
     const deleteRequest = useCallback((props: useDeleteProps<T>) => {
         const {url, functionToRun, onSuccess, onFailure, setIsLoading} = props;
 
-        console.log('Updating data at: ' + URL_API);
+        console.log('Deleting data at: ' + url);
 
         setIsLoading && setIsLoading(true);
 
@@ -29,7 +28,19 @@ export function useDelete<T>() {
                 const errorMessage = errorData.detalhe || 'Erro ao deletar dados!';
                 throw new Error(errorMessage);
             }
-            return await response.json() as Promise<T>;
+
+            const responseText = await response.text();
+            let jsonData: T | undefined = undefined;
+
+            if(responseText) {
+                try {
+                    jsonData = JSON.parse(responseText) as T;
+                } catch {
+                    throw new Error('Erro ao converter dados!');
+                }
+            }
+
+            return jsonData;
         }), {
             success: (data) => {
                 setIsLoading && setIsLoading(false);
@@ -40,12 +51,12 @@ export function useDelete<T>() {
 
                 return 'Dados deletados com sucesso!';
             },
-            error: () => {
+            error: (err) => {
                 setIsLoading && setIsLoading(false);
 
                 onFailure && onFailure();
 
-                return 'Erro ao alterar dados!';
+                return err.message || 'Erro ao deletar dados!';
             }
         });
     }, [toast]);

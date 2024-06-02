@@ -13,6 +13,8 @@ export function useGet<T>() {
     const getRequest = useCallback((props: useGetProps<T>) => {
         const {url, functionToRun, onSuccess, onFailure, setIsLoading} = props;
 
+        console.log('Fetching data at: ' + url);
+
         setIsLoading && setIsLoading(true);
 
         toast.promise(
@@ -27,7 +29,19 @@ export function useGet<T>() {
                     const errorMessage = errorData.detalhe || 'Erro ao carregar dados!';
                     throw new Error(errorMessage);
                 }
-                return await response.json() as Promise<T>;
+
+                const responseText = await response.text();
+                let jsonData: T | undefined = undefined;
+
+                if(responseText) {
+                    try {
+                        jsonData = JSON.parse(responseText) as T;
+                    } catch {
+                        throw new Error('Erro ao converter dados!');
+                    }
+                }
+
+                return jsonData;
             }),
             {
                 success: (data) => {
@@ -42,9 +56,9 @@ export function useGet<T>() {
                 error: (err) => {
                     setIsLoading && setIsLoading(false);
 
-                    onFailure && onFailure(err);
+                    onFailure && onFailure();
 
-                    return 'Erro ao carregar dados!';
+                    return err.message || 'Erro ao carregar dados!';
                 }
             }
         );
