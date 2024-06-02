@@ -16,6 +16,7 @@ public class CategoriaTarefa implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private String categoria;
+    private Integer id;
+    private String descricao;
     private List<TarefaDTO> tarefas;
 }

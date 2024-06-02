@@ -12,6 +12,7 @@ import br.api.todo_list.exceptions.tarefa.MarcarConclusaoTarefaException;
 import br.api.todo_list.exceptions.tarefa.TarefaNaoEncontradaException;
 import br.api.todo_list.models.Categoria;
 import br.api.todo_list.models.Tarefa;
+import br.api.todo_list.repositories.CategoriaRepository;
 import br.api.todo_list.repositories.TarefaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,12 @@ import java.util.stream.Collectors;
 public class TarefaService {
     private final CategoriaService categoriaService;
     private final TarefaRepository tarefaRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    public TarefaService(TarefaRepository tarefaRepository, CategoriaService categoriaService) {
+    public TarefaService(TarefaRepository tarefaRepository, CategoriaService categoriaService, CategoriaRepository categoriaRepository) {
         this.tarefaRepository = tarefaRepository;
         this.categoriaService = categoriaService;
+        this.categoriaRepository = categoriaRepository;
     }
 
     public List<TarefaDTO> listar () {
@@ -41,23 +44,25 @@ public class TarefaService {
     }
 
     public List<CategoriaTarefa> listarAgrupadasPorCategoria() {
+        List<Categoria> categorias = categoriaRepository.findAll();
+
         List<Tarefa> tarefas = tarefaRepository.findAll();
 
-        if (tarefas.isEmpty()) {
-            return Collections.emptyList();
+        Map<Categoria, List<Tarefa>> tarefasPorCategoria = tarefas
+                .stream()
+                .collect(Collectors.groupingBy(Tarefa::getCategoria));
+
+        List<CategoriaTarefa> categoriaTarefaList = new ArrayList<>();
+
+        for (Categoria categoria : categorias) {
+            List<Tarefa> tarefasDaCategoria = tarefasPorCategoria.getOrDefault(categoria, Collections.emptyList());
+            CategoriaTarefa categoriaTarefa = new CategoriaTarefa(categoria.getId(), categoria.getDescricao(), tarefasDaCategoria.stream().map(TarefaDTO::new).collect(Collectors.toList()));
+            categoriaTarefaList.add(categoriaTarefa);
         }
 
-        Map<CategoriaDTO, List<TarefaDTO>> tarefasPorCategoria = tarefas
-                .stream()
-                .map(TarefaDTO::new)
-                .collect(Collectors.groupingBy(TarefaDTO::getCategoria));
-
-        return tarefasPorCategoria
-                .entrySet()
-                .stream()
-                .map(entry -> new CategoriaTarefa(entry.getKey().getDescricao(), entry.getValue()))
-                .collect(Collectors.toList());
+        return categoriaTarefaList;
     }
+
 
     public TarefaDTO recuperar (Integer id) {
         Optional<Tarefa> tarefa = tarefaRepository.findById(id);
