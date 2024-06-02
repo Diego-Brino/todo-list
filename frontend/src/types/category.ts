@@ -2,6 +2,6 @@ import {ToDo} from "@/types/to-do.ts";
 
 export type Category = {
     id?: number;
-    titulo: string;
+    descricao: string;
     tarefas?: ToDo[]
 }
