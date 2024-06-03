@@ -1,66 +1,47 @@
 import {toast} from "sonner";
-import {useCallback} from "react";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import axios from "axios";
 
 interface usePatchProps<T> {
     url: string;
-    data?: object;
-    functionToRun?(data?: T): boolean | void;
+    queryKey: [unknown];
     onSuccess?(data?: T): boolean | void;
     onFailure?(data?: object): boolean | void;
-    setIsLoading?: (value: boolean) => void;
 }
 
-export function usePatch<T>() {
-    const patchRequest = useCallback((props: usePatchProps<T>) => {
-        const {url, data, functionToRun, onSuccess, onFailure, setIsLoading} = props;
+export function usePatch<T>({url, queryKey, onFailure, onSuccess}: usePatchProps<T>) {
+    const queryClient = useQueryClient();
 
-        setIsLoading && setIsLoading(true);
+    const mutationFn = (data: T) => {
+        const promise = axios
+            .patch(url, data)
+            .then(res => res.data);
+        processToast(promise);
+        return promise;
+    }
 
-        toast.promise(fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: data ? JSON.stringify(data) : null
-        }).then(async response => {
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.detalhe || 'Erro ao alterar dados!';
-                throw new Error(errorMessage);
-            }
-
-            const responseText = await response.text();
-            let jsonData: T | undefined = undefined;
-
-            if(responseText) {
-                try {
-                    jsonData = JSON.parse(responseText) as T;
-                } catch {
-                    throw new Error('Erro ao converter dados!');
-                }
-            }
-
-            return jsonData;
-        }), {
-            loading: 'Carregando...',
-            success: (data) => {
-                setIsLoading && setIsLoading(false);
-
-                functionToRun && functionToRun(data);
-
-                onSuccess && onSuccess(data);
-
-                return 'Dados alterados com sucesso!';
+    const processToast = (promise: Promise<T>) => toast.promise(
+        promise,
+        {
+            loading: "Carregando...",
+            success: () => {
+                return "Sucesso ao editar dados!"
             },
             error: (err) => {
-                setIsLoading && setIsLoading(false);
-
-                onFailure && onFailure();
-
-                return err.message || 'Erro ao alterar dados!';
+                return err.detalhe || 'Erro ao editar dados!';
             }
-        });
-    }, [toast]);
+        }
+    );
 
-    return patchRequest;
+    return useMutation({
+        mutationFn,
+        onSuccess: (data) => {
+            onSuccess && onSuccess(data);
+
+            queryKey && queryClient.invalidateQueries({
+                queryKey
+            });
+        },
+        onError: (err) => onFailure && onFailure(err)
+    });
 }

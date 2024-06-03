@@ -19,7 +19,18 @@ interface ToDoCardProps {
 export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTarefa: 'EM_ANDAMENTO'}, category}: ToDoCardProps) {
     const [concluido, setConcluido] = useState<boolean>(toDo.statusTarefa == "CONCLUIDA");
 
-    const patch = usePatch<ToDo|undefined>();
+    const {mutate: patchMutate} = usePatch({
+        url: `${URL_API}/tarefa/${toDo?.id}/marcar-conclusao`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            setConcluido(true);
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
 
     const {
         setToDoSelected,
@@ -35,15 +46,7 @@ export default function ToDoCard({toDo = {titulo: '', descricao: '', statusTaref
     }
 
     const handleSwitchStatus = (toDo: ToDo) => {
-        patch({
-            url: URL_API + '/tarefa/' + toDo.id + '/marcar-conclusao',
-            onSuccess: (data) => {
-                setConcluido(true);
-
-                console.log(data);
-            },
-            onFailure: (err) => console.log(err)
-        });
+        patchMutate(toDo);
     }
 
     return (

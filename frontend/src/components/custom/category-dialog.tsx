@@ -6,11 +6,11 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {useEffect} from "react";
-import {usePost} from "@/hooks/use-post.ts";
 import {useDelete} from "@/hooks/use-delete.ts";
 import {Category} from "@/types/category.ts";
 import {URL_API} from "@/constants";
 import {usePut} from "@/hooks/use-put.ts";
+import {usePost} from "@/hooks/use-post.ts";
 
 const FormSchema = z.object({
     descricao: z.string().nonempty({message: "Descrição é obrigatória"}),
@@ -22,13 +22,45 @@ interface CategoryDialogProps {
     category?: Category;
     isOpen: boolean;
     onClose: () => void;
-    fetchCategories: () => void;
 }
 
-export function CategoryDialog({category, isOpen, onClose, fetchCategories}: CategoryDialogProps) {
-    const post = usePost();
-    const put = usePut();
-    const del = useDelete();
+export function CategoryDialog({category, isOpen, onClose}: CategoryDialogProps) {
+    const {mutate: postMutate} = usePost({
+        url: `${URL_API}/categoria`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
+    const {mutate: putMutate} = usePut({
+        url: `${URL_API}/categoria/${category?.id}`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
+    const {mutate: deleteMutate} = useDelete({
+        url: `${URL_API}/categoria/${category?.id}`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
@@ -37,46 +69,15 @@ export function CategoryDialog({category, isOpen, onClose, fetchCategories}: Cat
 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
         if (category?.id) {
-            put({
-                url: `${URL_API}/categoria/${category.id}`,
-                data: data,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchCategories();
-
-                    onClose();
-                }
-            });
+            postMutate(data);
         } else {
-            post({
-                url: `${URL_API}/categoria`,
-                data: data,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchCategories();
-
-                    onClose();
-                }
-            });
+            putMutate(data);
         }
-
-
     };
 
     const onDelete = () => {
         if (category?.id) {
-            del({
-                url: `${URL_API}/categoria/${category.id}`,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchCategories();
-
-                    onClose();
-                }
-            });
+            deleteMutate();
         }
     }
 

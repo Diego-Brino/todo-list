@@ -1,69 +1,48 @@
-import {useCallback} from "react";
+import axios from "axios";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {toast} from "sonner";
 
 interface usePostProps<T> {
     url: string;
-    data: object;
-    functionToRun?(data?: T): boolean | void;
-    onSuccess?(data?: T): boolean | void;
-    onFailure?(data?: object): boolean | void;
-    setIsLoading?: (value: boolean) => void;
+    queryKey?: [unknown];
+    onSuccess?(data?: T): void
+    onFailure?(data?: object): void;
 }
 
-export function usePost<T>() {
+export function usePost<T>({url, queryKey, onSuccess, onFailure}: usePostProps<T>) {
 
-    const postRequest = useCallback((props: usePostProps<T>) => {
-        const {url, data, functionToRun, onSuccess, onFailure, setIsLoading} = props;
+    const queryClient = useQueryClient();
 
-        console.log('Creating data at: ' + url);
+    const mutationFn = (data: T) => {
+        const promise = axios
+            .post(url, data)
+            .then(res => res.data);
+        processToast(promise);
+        return promise;
+    }
 
-        setIsLoading && setIsLoading(true);
-
-        toast.promise(fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: data ? JSON.stringify(data) : null
-        }).then(async response => {
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.detalhe || 'Erro ao alterar dados!';
-                throw new Error(errorMessage);
-            }
-
-            const responseText = await response.text();
-            let jsonData: T | undefined = undefined;
-
-            if(responseText) {
-                try {
-                    jsonData = JSON.parse(responseText) as T;
-                } catch {
-                    throw new Error('Erro ao converter dados!');
-                }
-            }
-
-            return jsonData;
-        }), {
-            loading: 'Carregando...',
-            success: (data) => {
-                setIsLoading && setIsLoading(false);
-
-                functionToRun && functionToRun(data);
-
-                onSuccess && onSuccess(data);
-
-                return 'Dados cadastrados com sucesso!';
+    const processToast = (promise: Promise<T>) => toast.promise(
+        promise,
+        {
+            loading: "Carregando...",
+            success: () => {
+                return "Sucesso ao criar dados!"
             },
             error: (err) => {
-                setIsLoading && setIsLoading(false);
-
-                onFailure && onFailure();
-
-                return err.message || 'Erro ao criar dados!';
+                return err.detalhe || 'Erro ao criar dados!';
             }
-        });
-    }, [toast]);
+        }
+    );
 
-    return postRequest;
+    return useMutation({
+        mutationFn,
+        onSuccess: (data) => {
+            onSuccess && onSuccess(data);
+
+            queryKey && queryClient.invalidateQueries({
+                queryKey
+            });
+        },
+        onError: (err) => onFailure && onFailure(err)
+    });
 }

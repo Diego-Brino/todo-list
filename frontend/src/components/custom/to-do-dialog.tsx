@@ -1,30 +1,17 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog.tsx";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {ToDo} from "@/types/to-do.ts";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage
-} from "@/components/ui/form.tsx";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {useEffect} from "react";
-import {usePost} from "@/hooks/use-post.ts";
 import {usePatch} from "@/hooks/use-patch.ts";
 import {useDelete} from "@/hooks/use-delete.ts";
 import {URL_API} from "@/constants";
 import {Category} from "@/types/category.ts";
+import {usePost} from "@/hooks/use-post.ts";
 
 const FormSchema = z.object({
     idCategoria: z.number(),
@@ -39,13 +26,45 @@ interface ToDoDialogProps {
     category?: Category;
     isOpen: boolean;
     onClose: () => void;
-    fetchToDo: () => void;
 }
 
-export function ToDoDialog({toDo, category, isOpen, onClose, fetchToDo}: ToDoDialogProps) {
-    const post = usePost();
-    const patch = usePatch();
-    const del = useDelete();
+export function ToDoDialog({toDo, category, isOpen, onClose}: ToDoDialogProps) {
+    const {mutate: postMutate} = usePost({
+        url: `${URL_API}/tarefa`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
+    const {mutate: patchMutate} = usePatch({
+        url: `${URL_API}/tarefa/${toDo?.id}`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
+    const {mutate: deleteMutate} = useDelete({
+        url: `${URL_API}/tarefa/${toDo?.id}`,
+        queryKey: ['categorias'],
+        onSuccess: (data) => {
+            console.log(data);
+
+            onClose();
+        },
+        onFailure: (err) => {
+            console.log(err)
+        }
+    });
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
@@ -54,54 +73,19 @@ export function ToDoDialog({toDo, category, isOpen, onClose, fetchToDo}: ToDoDia
 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
         if (toDo?.id) {
-            patch({
-                url: `${URL_API}/tarefa/${toDo.id}`,
-                data: data,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchToDo();
-
-                    onClose();
-                },
-                onFailure: (data) => {
-                    console.log(data);
-                }
-            });
+            patchMutate(data);
         } else {
-            post({
-                url: `${URL_API}/tarefa`,
-                data: data,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchToDo();
-
-                    onClose();
-                },
-                onFailure: (data) => {
-                    console.log(data);
-                }
-            });
+            postMutate(data);
         }
     };
 
     const onDelete = () => {
         if (toDo?.id) {
-            del({
-               url: `${URL_API}/tarefa/${toDo.id}`,
-                onSuccess: (data) => {
-                    console.log(data);
-
-                    fetchToDo();
-
-                    onClose();
-                }
-            });
+            deleteMutate();
         }
     }
 
-    const onError = (errors: any) => {
+    const onError = (errors: object) => {
         console.log("Form submission errors:", errors);
     };
 
