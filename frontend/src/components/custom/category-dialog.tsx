@@ -69,9 +69,9 @@ export function CategoryDialog({category, isOpen, onClose}: CategoryDialogProps)
 
     const onSubmit = (data: z.infer<typeof FormSchema>) => {
         if (category?.id) {
-            postMutate(data);
-        } else {
             putMutate(data);
+        } else {
+            postMutate(data);
         }
     };
 
